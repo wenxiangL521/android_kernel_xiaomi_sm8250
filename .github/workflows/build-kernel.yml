@@ -53,6 +53,16 @@ jobs:
           make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
                CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y CONFIG_PS5169=y \
                vendor/kona-perf_defconfig
+          # 关键：alioth.config 是 fragment，必须 merge 进 .config，
+          # 否则 CONFIG_MACH_XIAOMI_ALIOTH 不开 -> MACH_XIAOMI 不开
+          # -> dts Makefile 走 else 分支，只编 kona-* 参考板，
+          # 且触摸/指纹/充电/马达/相机驱动全部缺失。
+          echo "=== merge alioth.config fragment ==="
+          ARCH=arm64 scripts/kconfig/merge_config.sh -m -O out \
+               out/.config arch/arm64/configs/vendor/xiaomi/alioth.config
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
+          echo "=== 校验关键开关 ==="
+          grep -E "MACH_XIAOMI|FOCALTECH|AW8697_HAPTIC|BQ2597X" out/.config || echo MISSING
           make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
                CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y CONFIG_PS5169=y \
                KCFLAGS="$WFLAGS" -j2
