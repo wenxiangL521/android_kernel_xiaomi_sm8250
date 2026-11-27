@@ -60,6 +60,10 @@ jobs:
           echo "=== merge alioth.config fragment ==="
           ARCH=arm64 scripts/kconfig/merge_config.sh -m -O out \
                out/.config arch/arm64/configs/vendor/xiaomi/alioth.config
+          # alioth 用 focaltech_spi(CONFIG_TOUCHSCREEN_FOCALTECH)，
+          # kona-perf_defconfig 的旧 focaltech_touch(CONFIG_TOUCHSCREEN_FTS)
+          # 会定义同名 fts_* 符号导致 ld duplicate symbol，必须关掉。
+          scripts/config --file out/.config --disable TOUCHSCREEN_FTS
           make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
           echo "=== 校验关键开关 ==="
           grep -E "MACH_XIAOMI|FOCALTECH|AW8697_HAPTIC|BQ2597X" out/.config || echo MISSING
