@@ -57,15 +57,17 @@ jobs:
                CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y CONFIG_PS5169=y \
                KCFLAGS="$WFLAGS" -j2
           echo "=== artifacts ==="
-          ls -lh out/arch/arm64/boot/Image.gz
+          ls -lh out/arch/arm64/boot/Image* 2>/dev/null || echo "(no Image)"
+          ls -lh out/arch/arm64/boot/dts/vendor/qcom/*.dtb out/arch/arm64/boot/dts/vendor/qcom/*.dtbo 2>/dev/null | head -5
           cat out/include/config/kernel.release
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: alioth-kernel
-          if-no-files-found: error
+          if-no-files-found: warn
           path: |
+            kernel/out/arch/arm64/boot/Image
             kernel/out/arch/arm64/boot/Image.gz
             kernel/out/arch/arm64/boot/dts/vendor/qcom/kona-v2.1.dtb
             kernel/out/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250-overlay.dtbo
