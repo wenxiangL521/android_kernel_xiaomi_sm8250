@@ -56,6 +56,12 @@ jobs:
           make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
                CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y CONFIG_PS5169=y \
                KCFLAGS="$WFLAGS" -j2
+          # 默认目标不含小米的 overlay dtbo，需要显式编 dtbs
+          echo "=== dtbs ==="
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+               CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y CONFIG_PS5169=y \
+               KCFLAGS="$WFLAGS" dtbs -j2 2>&1 | tail -20
+          ls -lh out/arch/arm64/boot/dts/vendor/qcom/*alioth* 2>/dev/null || echo "(no alioth dtbo)" 
           echo "=== artifacts ==="
           ls -lh out/arch/arm64/boot/Image* 2>/dev/null || echo "(no Image)"
           ls -lh out/arch/arm64/boot/dts/vendor/qcom/*.dtb out/arch/arm64/boot/dts/vendor/qcom/*.dtbo 2>/dev/null | head -5
