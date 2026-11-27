@@ -89,6 +89,8 @@ jobs:
           path: |
             kernel/out/arch/arm64/boot/Image
             kernel/out/arch/arm64/boot/Image.gz
+            kernel/out/arch/arm64/boot/dts/vendor/qcom/kona.dtb
+            kernel/out/arch/arm64/boot/dts/vendor/qcom/kona-v2.dtb
             kernel/out/arch/arm64/boot/dts/vendor/qcom/kona-v2.1.dtb
             kernel/out/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250-overlay.dtbo
             kernel/out/include/config/kernel.release
