@@ -47,9 +47,15 @@ jobs:
         run: |
           cd kernel
           export PATH="$PWD/../tc/bin:$PATH"
-          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1                CONFIG_WERROR=n CONFIG_USB_GSPCA=y                vendor/kona-perf_defconfig
-          # -Werror 会让 ufshcd 等驱动的"未使用变量"警告直接中断编译，强制关掉
-          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1                CONFIG_WERROR=n CONFIG_USB_GSPCA=y                KCFLAGS="-Wno-error -Wno-unused-variable -Wno-unused-label"                -j2
+          # CONFIG_CC_WERROR 是真实变量名（defconfig:728），不是 CONFIG_WERROR
+          # Makefile:449-450 有两个硬编码 -Werror=xxx，需用 -Wno-error= 单独压
+          WFLAGS="-Wno-error -Wno-error=implicit-function-declaration -Wno-error=return-type -Wno-unused-variable -Wno-unused-label"
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+               CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y \
+               vendor/kona-perf_defconfig
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+               CONFIG_CC_WERROR=n CONFIG_USB_GSPCA=y \
+               KCFLAGS="$WFLAGS" -j2
           echo "=== artifacts ==="
           ls -lh out/arch/arm64/boot/Image.gz
           cat out/include/config/kernel.release
