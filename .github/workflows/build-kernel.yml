@@ -1,0 +1,65 @@
+name: build-kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'LineageOS kernel branch'
+        default: 'lineage-24.0'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+                      /opt/hostedtoolcache /usr/local/share/boost \
+                      /usr/local/.ghcup /opt/az /usr/share/swift \
+                      /usr/local/lib/node_modules
+          sudo apt-get clean
+          df -h /
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex \
+            libssl-dev libelf-dev zip python3 cpio rsync libncurses-dev
+
+      - name: Clone kernel
+        run: |
+          git clone --depth 1 -b "${{ github.event.inputs.branch }}" \
+            "https://github.com/${{ github.repository }}.git" kernel
+          cd kernel
+          echo "HEAD: $(git log --oneline -1)"
+          echo "VERSION: $(make kernelversion 2>/dev/null)"
+          du -sh .
+
+      - name: Clone clang-r416183b
+        run: |
+          git clone --depth 1 -b lineage-20.0 \
+            https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b tc
+          ./tc/bin/clang --version | head -2
+
+      - name: Build (LTO kept)
+        run: |
+          cd kernel
+          export PATH="$PWD/../tc/bin:$PATH"
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 vendor/kona-perf_defconfig
+          make O=out ARCH=arm64 LLVM=1 LLVM_IAS=1 CONFIG_USB_GSPCA=y -j2
+          echo "=== artifacts ==="
+          ls -lh out/arch/arm64/boot/Image.gz
+          cat out/include/config/kernel.release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: alioth-kernel
+          if-no-files-found: error
+          path: |
+            kernel/out/arch/arm64/boot/Image.gz
+            kernel/out/arch/arm64/boot/dts/vendor/qcom/kona-v2.1.dtb
+            kernel/out/arch/arm64/boot/dts/vendor/qcom/alioth-sm8250-overlay.dtbo
+            kernel/out/include/config/kernel.release
